@@ -19,6 +19,10 @@ import static org.eventb.core.seqprover.IConfidence.PENDING;
 import static org.eventb.internal.core.pom.AutoPOM.tryMakeConsistent;
 import static org.eventb.internal.core.preferences.PreferenceUtils.getSimplifyProofPref;
 
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.SubMonitor;
@@ -40,7 +44,7 @@ import org.rodinp.core.RodinDBException;
  *
  */
 public final class AutoProver {
-	
+
 	public static final String AUTO_PROVER = "auto-prover";
 
 	private static final IAutoPostTacticManager AUTOTACTIC_MANAGER = EventBPlugin
@@ -53,7 +57,7 @@ public final class AutoProver {
 	private AutoProver() {
 		// Nothing to do.
 	}
-	
+
 	public static void run(IProofComponent pc, IPSStatus[] pos,
 			IProgressMonitor monitor) throws RodinDBException {
 		final SubMonitor sMonitor = SubMonitor.convert(monitor, "auto-proving", pos.length + 1);
@@ -80,22 +84,42 @@ public final class AutoProver {
 		final SubMonitor sMonitor = SubMonitor.convert(monitor,
 				"auto-proving", pos.length);
 		final IProofManager pm = EventBPlugin.getProofManager();
+		int cores = Runtime.getRuntime().availableProcessors();
+		final ThreadPoolExecutor executor =
+				(ThreadPoolExecutor) Executors.newFixedThreadPool(Math.min(pos.length, cores));
+
 		try {
 			for (IPSStatus status : pos) {
-				final IPSRoot psRoot = (IPSRoot) status.getRoot();
-				final IProofComponent pc = pm
-						.getProofComponent(psRoot);
+				Runnable task = () -> {
+					try {
+						final IPSRoot psRoot = (IPSRoot) status.getRoot();
+						final IProofComponent pc = pm
+								.getProofComponent(psRoot);
 
-				run(pc, new IPSStatus[] {status}, sMonitor.split(1));
+						run(pc, new IPSStatus[] {status}, sMonitor.split(1));
+					} catch (Exception ex) {
+						Thread t = Thread.currentThread();
+						t.getUncaughtExceptionHandler().uncaughtException(t, ex);
+					}
+				};
+
+				executor.submit(task);
 			}
+
+			executor.shutdown();
+			while (!executor.isTerminated()) {
+				executor.awaitTermination(1, TimeUnit.SECONDS);
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		} finally {
 			monitor.done();
 		}
 	}
-	
+
 	private static boolean processPo(IProofComponent pc, IPSStatus status,
 			IProgressMonitor pm) throws RodinDBException {
-		
+
 		final String poName = status.getElementName();
 		try {
 			pm.beginTask(poName + ":", 3);
@@ -118,7 +142,7 @@ public final class AutoProver {
 		sMonitor.subTask("loading");
 		return pc.createProofAttempt(poName, AUTO_PROVER, sMonitor.split(1));
 	}
-	
+
 	// Consumes one tick of the given progress monitor
 	private static void prove(IProofAttempt pa, IProgressMonitor pm) {
 		final SubMonitor sMonitor = SubMonitor.convert(pm, 1);
