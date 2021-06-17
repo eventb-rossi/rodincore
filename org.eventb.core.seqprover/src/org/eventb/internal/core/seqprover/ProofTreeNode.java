@@ -165,7 +165,7 @@ public final class ProofTreeNode implements IProofTreeNode {
 	 * @param node
 	 * 				node to copy
 	 */
-	private ProofTreeNode(ProofTreeNode node) {
+	public ProofTreeNode(ProofTreeNode node) {
 		this.proofTree = node.proofTree;
 		this.parent = node.parent;
 		this.sequent = node.sequent;

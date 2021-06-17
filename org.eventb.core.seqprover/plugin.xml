@@ -917,6 +917,14 @@
       </combinator>
       <combinator
             boundArity="false"
+            class="org.eventb.core.seqprover.eventbExtensions.TacticCombinators$FirstSuccessful"
+            description="%firstSuccessfulDesc"
+            id="firstSuccessful"
+            minArity="1"
+            name="%firstSuccessfulName">
+      </combinator>
+      <combinator
+            boundArity="false"
             class="org.eventb.core.seqprover.eventbExtensions.TacticCombinators$ComposeUntilFailure"
             description="%compFailDescription"
             id="composeUntilFailure"

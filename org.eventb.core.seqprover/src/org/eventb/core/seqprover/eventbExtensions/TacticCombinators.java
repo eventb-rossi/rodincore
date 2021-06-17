@@ -132,6 +132,26 @@ public class TacticCombinators {
 	}
 
 	/**
+	 * The 'first successful' tactic combinator.
+	 * 
+	 * @author Ilya Shchepetkov
+	 * 
+	 */
+	public static class FirstSuccessful implements ITacticCombinator {
+
+		public static final String COMBINATOR_ID = SequentProver.PLUGIN_ID
+				+ ".firstSuccessful"; //$NON-NLS-1$
+
+		@Override
+		public ITactic getTactic(List<ITactic> tactics) {
+			assertOneOrMore(tactics);
+			final ITactic[] tacs = tactics.toArray(new ITactic[tactics.size()]);
+			return BasicTactics.firstSuccessful(tacs);
+		}
+
+	}
+
+	/**
 	 * The 'compose until failure' tactic combinator.
 	 * 
 	 * @author Nicolas Beauger
