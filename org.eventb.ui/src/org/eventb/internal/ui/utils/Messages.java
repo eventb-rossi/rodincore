@@ -103,6 +103,9 @@ public final class Messages {
 	public static String preferencepage_posttactic_title;
 	public static String preferencepage_posttactic_enablementdescription;
 	public static String preferencepage_posttactic_selectedtacticprofiledescription;
+	public static String preferencepage_intertactic_title;
+	public static String preferencepage_intertactic_enablementdescription;
+	public static String preferencepage_intertactic_selectedtacticprofiledescription;
 	public static String preferencepage_postautotactic_description;
 	public static String preferencepage_postautotactic_tab_autoposttactics;
 	public static String preferencepage_postautotactic_tab_profiles;

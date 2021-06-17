@@ -17,10 +17,14 @@ import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.DEFAULT_POST_TACTIC;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_AUTOTACTIC_CHOICE;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_AUTOTACTIC_ENABLE;
+import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_INTERTACTIC_CHOICE;
+import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_INTERTACTIC_ENABLE;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_POSTTACTIC_CHOICE;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_POSTTACTIC_ENABLE;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceFactory.makeTacticPreferenceMap;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceFactory.makeTacticProfileCache;
+import static org.eventb.internal.ui.utils.Messages.preferencepage_intertactic_enablementdescription;
+import static org.eventb.internal.ui.utils.Messages.preferencepage_intertactic_selectedtacticprofiledescription;
 import static org.eventb.internal.ui.utils.Messages.preferencepage_pomtactic_enablementdescription;
 import static org.eventb.internal.ui.utils.Messages.preferencepage_pomtactic_selectedtacticprofiledescription;
 import static org.eventb.internal.ui.utils.Messages.preferencepage_postautotactic_description;
@@ -92,6 +96,8 @@ public class PostAutoTacticPreferencePage extends
 	protected ITacticProfileCache workspaceCache = null;
 	// Auto/Post Tactics tab : auto-tactic group
 	protected EnabledComboEditor autoTactic;
+	// Auto/Post Tactics tab : interactive-tactic group
+	protected EnabledComboEditor interTactic;
 	// Auto/Post Tactics tab : post-tactic group
 	protected EnabledComboEditor postTactic;
 	// Tactics tab : list of Tactics
@@ -159,6 +165,12 @@ public class PostAutoTacticPreferencePage extends
 				P_AUTOTACTIC_CHOICE,
 				preferencepage_pomtactic_selectedtacticprofiledescription, tab,
 				isPropertyPage());
+		interTactic = new EnabledComboEditor(getPreferenceStore(),
+				Messages.preferencepage_intertactic_title, P_INTERTACTIC_ENABLE,
+				preferencepage_intertactic_enablementdescription,
+				P_INTERTACTIC_CHOICE,
+				preferencepage_intertactic_selectedtacticprofiledescription, tab,
+				isPropertyPage());
 		postTactic = new EnabledComboEditor(getPreferenceStore(),
 				Messages.preferencepage_posttactic_title, P_POSTTACTIC_ENABLE,
 				preferencepage_posttactic_enablementdescription,
@@ -173,6 +185,7 @@ public class PostAutoTacticPreferencePage extends
 					CachedPreferenceMap<ITacticDescriptor> map) {
 				final String[] names = getSortedProfileNames();
 				autoTactic.setItems(names);
+				interTactic.setItems(names);
 				postTactic.setItems(names);
 				tab.pack();
 			}
@@ -613,6 +626,7 @@ public class PostAutoTacticPreferencePage extends
 		public void store() {
 			cache.store();
 			autoTactic.store();
+			interTactic.store();
 			postTactic.store();
 		}
 
@@ -621,6 +635,7 @@ public class PostAutoTacticPreferencePage extends
 			tacticList.setEnabled(enabled);
 			updateButtons();
 			autoTactic.setEnabled(enabled);
+			interTactic.setEnabled(enabled);
 			postTactic.setEnabled(enabled);
 		}
 
@@ -628,6 +643,7 @@ public class PostAutoTacticPreferencePage extends
 		public void load() {
 			cache.load();
 			autoTactic.load();
+			interTactic.load();
 			postTactic.load();
 		}
 
@@ -635,6 +651,7 @@ public class PostAutoTacticPreferencePage extends
 		public void loadDefault() {
 			cache.loadDefault();
 			autoTactic.loadDefault();
+			interTactic.loadDefault();
 			postTactic.loadDefault();
 		}
 

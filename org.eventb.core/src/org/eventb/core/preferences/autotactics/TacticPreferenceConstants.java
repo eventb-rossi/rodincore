@@ -38,6 +38,16 @@ public class TacticPreferenceConstants {
 	 * The preference for auto-tactics selected profile.
 	 */
 	public static final String P_AUTOTACTIC_CHOICE = "Auto-Tactics Profil";
+	
+	/**
+	 * The preference identifier for interactive-tactics enablement.
+	 */
+	public static final String P_INTERTACTIC_ENABLE = "Interactive-Tactic enable";
+
+	/**
+	 * The preference for interactive-tactics selected profile.
+	 */
+	public static final String P_INTERTACTIC_CHOICE = "Interactive-Tactics Profil";
 
 	/**
 	 * The preference containing all the tactic profiles.

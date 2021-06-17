@@ -12,6 +12,7 @@ package org.eventb.internal.core.preferences;
 
 import static org.eventb.core.EventBPlugin.PLUGIN_ID;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_AUTOTACTIC_CHOICE;
+import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_INTERTACTIC_CHOICE;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_POSTTACTIC_CHOICE;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_TACTICSPROFILES;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceFactory.makeTacticPreferenceMap;
@@ -41,10 +42,14 @@ import org.eventb.internal.core.pom.POMTacticPreference;
  */
 public class AutoPostTacticManager implements IAutoPostTacticManager {
 
+	private enum Tactics {AUTO, INTER, POST}
+
 	private static final IAutoTacticPreference postTacPref = PostTacticPreference
 			.getDefault();
 	private static final IAutoTacticPreference autoTacPref = POMTacticPreference
 			.getDefault();
+	private static final IAutoTacticPreference interTacPref = POMTacticPreference
+			.getDefault(); // TODO: Create preference for interactive-tactic
 
 	private static IAutoPostTacticManager INSTANCE;
 
@@ -57,6 +62,7 @@ public class AutoPostTacticManager implements IAutoPostTacticManager {
 		profilesCache = makeTacticPreferenceMap();
 		preferencesService = Platform.getPreferencesService();
 		autoTacPref.setSelectedDescriptor(autoTacPref.getDefaultDescriptor());
+		interTacPref.setSelectedDescriptor(interTacPref.getDefaultDescriptor());
 		postTacPref.setSelectedDescriptor(postTacPref.getDefaultDescriptor());
 	}
 
@@ -69,16 +75,22 @@ public class AutoPostTacticManager implements IAutoPostTacticManager {
 	@Override
 	public ITactic getSelectedAutoTactics(IEventBRoot root) {
 		final IProject project = root.getRodinProject().getProject();
-		return getSelectedComposedTactics(project, true);
+		return getSelectedComposedTactics(project, Tactics.AUTO);
+	}
+	
+	@Override
+	public ITactic getSelectedInterTactics(IEventBRoot root) {
+		final IProject project = root.getRodinProject().getProject();
+		return getSelectedComposedTactics(project, Tactics.INTER);
 	}
 
 	@Override
 	public ITactic getSelectedPostTactics(IEventBRoot root) {
 		final IProject project = root.getRodinProject().getProject();
-		return getSelectedComposedTactics(project, false);
+		return getSelectedComposedTactics(project, Tactics.POST);
 	}
 
-	private ITactic getSelectedComposedTactics(IProject project, boolean auto) {
+	private ITactic getSelectedComposedTactics(IProject project, Tactics tactic) {
 		final IScopeContext sc = new ProjectScope(project);
 		PreferenceUtils.restoreFromUIIfNeeded(InstanceScope.INSTANCE.getNode(PLUGIN_ID), false);
 		PreferenceUtils.restoreFromUIIfNeeded(sc.getNode(PLUGIN_ID), false);
@@ -89,35 +101,67 @@ public class AutoPostTacticManager implements IAutoPostTacticManager {
 			// The preference was not initialized, this should not happen
 			// We return the selected tactics
 			Util.log(null, "Tactic preference has not been initialized");
-			return auto ? autoTacPref.getSelectedComposedTactic() : postTacPref
-					.getSelectedComposedTactic();
+			switch (tactic) {
+				case AUTO  : return autoTacPref.getSelectedComposedTactic();
+				case INTER : return interTacPref.getSelectedComposedTactic();
+				case POST  : return postTacPref.getSelectedComposedTactic();
+				default: throw new RuntimeException("Not all tactics types were enumerated");
+			}
 		}
 		profilesCache.inject(profiles);
 		final String choice;
-		if (auto) {
-			choice = preferencesService.getString(PLUGIN_ID,
+		switch (tactic) {
+			case AUTO:
+				choice = preferencesService.getString(PLUGIN_ID,
 					P_AUTOTACTIC_CHOICE, null, contexts);
-		} else { // (type.equals(POST_TACTICS_TAG))
-			choice = preferencesService.getString(PLUGIN_ID,
-					P_POSTTACTIC_CHOICE, null, contexts);			
+				break;
+			case INTER:
+				choice = preferencesService.getString(PLUGIN_ID,
+					P_INTERTACTIC_CHOICE, null, contexts);
+				break;
+			case POST:
+				choice = preferencesService.getString(PLUGIN_ID,
+					P_POSTTACTIC_CHOICE, null, contexts);
+				break;
+			default:
+				throw new RuntimeException("Not all tactics types were enumerated");
 		}
-		return getCorrespondingTactic(choice, auto);
+		return getCorrespondingTactic(choice, tactic);
 	}
 
-	private ITactic getCorrespondingTactic(String choice, boolean auto) {
+	private ITactic getCorrespondingTactic(String choice, Tactics tactic) {
 		final ITactic composedTactic;
-		if (auto)
-			composedTactic = getTactic(choice, autoTacPref);
-		else
-			composedTactic = getTactic(choice, postTacPref);
+		switch (tactic) {
+			case AUTO:
+				composedTactic = getTactic(choice, autoTacPref);
+				break;
+			case INTER:
+				composedTactic = getTactic(choice, interTacPref);
+				break;
+			case POST:
+				composedTactic = getTactic(choice, postTacPref);
+				break;
+			default:
+				throw new RuntimeException("Not all tactics types were enumerated");
+		}
+
 		if (composedTactic == null) {
-			final String tacType = (auto) ? "auto" : "post";
+			final String tacType = getTacticType(tactic);
 			Util.log(null, "Failed to load the tactic profile " + choice
 					+ " for the tactic " + tacType + "tactic");
 			return BasicTactics.failTac("Could not load the profile " + choice
 					+ " from the cache for the tactic " + tacType + "tactic");
 		}
 		return composedTactic;
+	}
+
+	private String getTacticType(Tactics tactic) {
+		switch (tactic) {
+			case AUTO: return "auto";
+			case INTER: return "inter";
+			case POST: return "post";
+			default: throw new RuntimeException("Not all tactic types were enumerated");
+		}
 	}
 
 	private ITactic getTactic(String choice, IAutoTacticPreference pref) {
@@ -137,6 +181,11 @@ public class AutoPostTacticManager implements IAutoPostTacticManager {
 	@Override
 	public IAutoTacticPreference getAutoTacticPreference() {
 		return autoTacPref;
+	}
+
+	@Override
+	public IAutoTacticPreference getInterTacticPreference() {
+		return interTacPref;
 	}
 
 	@Override

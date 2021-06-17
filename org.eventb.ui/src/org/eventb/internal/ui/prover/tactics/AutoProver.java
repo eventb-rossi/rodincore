@@ -37,15 +37,15 @@ public class AutoProver extends AbstractHypGoalTacticProvider {
 			DefaultPredicateApplication {
 
 		private final IPORoot root;
-		
+
 		public AutoProverApplication(IPORoot poRoot) {
 			this.root = poRoot;
 		}
-		
+
 		@Override
 		public ITactic getTactic(String[] inputs, String globalInput) {
 			return EventBPlugin.getAutoPostTacticManager()
-					.getSelectedAutoTactics(root);
+					.getSelectedInterTactics(root);
 		}
 
 	}

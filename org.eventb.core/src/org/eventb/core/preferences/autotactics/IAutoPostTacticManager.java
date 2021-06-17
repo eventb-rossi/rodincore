@@ -39,6 +39,18 @@ public interface IAutoPostTacticManager {
 	ITactic getSelectedAutoTactics(IEventBRoot root);
 
 	/**
+	 * Returns if the interactive-tactics are activated, the composed tactic
+	 * of the selected tactic profile for the given root if there is one, or
+	 * of the workspace profile.
+	 * 
+	 * @param root
+	 *            the root for which the auto-tactic profile is retrieved
+	 * @return the composed tactic of selected interactive-tactics for the
+	 *            given root.
+	 */
+	ITactic getSelectedInterTactics(IEventBRoot root);
+
+	/**
 	 * Returns if the post-tactics are activated, the composed tactic of the
 	 * selected tactic profile for the given root if there is one, or of the
 	 * workspace profile.
@@ -53,6 +65,11 @@ public interface IAutoPostTacticManager {
 	 * @return the workspace auto-tactic preference
 	 */
 	IAutoTacticPreference getAutoTacticPreference();
+
+	/**
+	 * @return the workspace interactive-tactic preference
+	 */
+	IAutoTacticPreference getInterTacticPreference();
 
 	/**
 	 * @return the workspace post-tactic preference
