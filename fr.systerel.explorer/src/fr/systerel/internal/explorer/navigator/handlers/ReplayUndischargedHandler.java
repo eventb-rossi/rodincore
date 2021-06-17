@@ -13,6 +13,9 @@ package fr.systerel.internal.explorer.navigator.handlers;
 import static org.eventb.core.EventBPlugin.rebuildProof;
 
 import java.util.Set;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.resources.WorkspaceJob;
 import org.eclipse.core.runtime.CoreException;
@@ -22,7 +25,6 @@ import org.eclipse.jface.viewers.IStructuredSelection;
 import org.eventb.core.IPRProof;
 import org.eventb.core.IPSStatus;
 
-import fr.systerel.internal.explorer.navigator.ExplorerUtils;
 import fr.systerel.internal.explorer.navigator.actionProviders.Messages;
 
 /**
@@ -46,10 +48,35 @@ public class ReplayUndischargedHandler extends AbstractJobHandler {
 			throws InterruptedException, CoreException {
 		final SubMonitor subMonitor = SubMonitor.convert(monitor,
 				statuses.size());
-		for (IPSStatus status : statuses) {
-			ExplorerUtils.checkCancel(subMonitor);
-			final IPRProof proof = status.getProof();
-			rebuildProof(proof, true, subMonitor.newChild(1));
+
+		int cores = Runtime.getRuntime().availableProcessors();
+		final ThreadPoolExecutor executor =
+				(ThreadPoolExecutor) Executors.newFixedThreadPool(Math.min(statuses.size(), cores));
+
+		try {
+			for (IPSStatus status : statuses) {
+				Runnable task = () -> {
+					try {
+						if (subMonitor != null && subMonitor.isCanceled()) {
+							return;
+						}
+						final IPRProof proof = status.getProof();
+						rebuildProof(proof, true, subMonitor.newChild(1));
+					} catch (Exception ex) {
+						Thread t = Thread.currentThread();
+						t.getUncaughtExceptionHandler().uncaughtException(t, ex);
+					}
+				};
+
+				executor.submit(task);
+			}
+
+			executor.shutdown();
+			while (!executor.isTerminated()) {
+				executor.awaitTermination(1, TimeUnit.SECONDS);
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		}
 	}
 
