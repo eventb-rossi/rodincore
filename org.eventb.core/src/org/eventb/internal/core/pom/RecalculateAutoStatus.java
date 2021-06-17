@@ -18,6 +18,10 @@ import static org.eventb.internal.core.preferences.PreferenceUtils.getSimplifyPr
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
@@ -70,22 +74,47 @@ public final class RecalculateAutoStatus {
 		run(set, monitor);
 	}
 
-	
 	public static void run(Set<IPSStatus> pos, IProgressMonitor monitor)
 			throws RodinDBException {
-		final SubMonitor pm = SubMonitor.convert(monitor, pos.size());
-		final Set<IProofComponent> prComps = new HashSet<IProofComponent>();
+		final SubMonitor sMonitor = SubMonitor.convert(monitor, pos.size());
+		final Set<IProofComponent> prComps = ConcurrentHashMap.<IProofComponent>newKeySet();
+		
+		int cores = Runtime.getRuntime().availableProcessors();
+		final ThreadPoolExecutor executor =
+				(ThreadPoolExecutor) Executors.newFixedThreadPool(Math.min(pos.size(), cores));
+
 		try {
 			for (IPSStatus status : pos) {
-				if (pm.isCanceled()) {
-					makeAllConsistent(prComps);
-					throw new OperationCanceledException();
-				}
-				final IProofComponent pc = getProofComponent(status);
-				processPo(pc, status, pm.newChild(1, SubMonitor.SUPPRESS_NONE));
-				prComps.add(pc);
+				Runnable task = () -> {
+					try {
+						if (sMonitor.isCanceled()) {
+							return;
+						}
+						final IProofComponent pc = getProofComponent(status);
+						processPo(pc, status, sMonitor.newChild(1, SubMonitor.SUPPRESS_NONE));
+						prComps.add(pc);
+					} catch (Exception ex) {
+						Thread t = Thread.currentThread();
+						t.getUncaughtExceptionHandler().uncaughtException(t, ex);
+					}
+				};
+
+				executor.submit(task);
 			}
-			saveAll(prComps);
+
+			executor.shutdown();
+			while (!executor.isTerminated()) {
+				executor.awaitTermination(1, TimeUnit.SECONDS);
+			}
+			
+			if (sMonitor.isCanceled()) {
+				makeAllConsistent(prComps);
+				throw new OperationCanceledException();
+			} else {
+				saveAll(prComps);
+			}
+		} catch (InterruptedException e) {
+			e.printStackTrace();
 		} finally {
 			monitor.done();
 		}
