@@ -34,7 +34,7 @@ public class ReplayUndischargedHandler extends AbstractJobHandler {
 
 	@Override
 	protected WorkspaceJob getWorkspaceJob(IStructuredSelection sel) {
-		return new ProofStatusJob(Messages.dialogs_replayingProofs, true, sel) {
+		return new ParallelProofStatusJob(Messages.dialogs_replayingProofs, true, sel) {
 
 			@Override
 			protected void perform(Set<IPSStatus> statuses,

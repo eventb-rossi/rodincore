@@ -41,8 +41,7 @@ public abstract class ProofStatusJob extends WorkspaceJob {
 		super(name);
 		this.pendingOnly = pendingOnly;
 		this.input = new HandlerInput(selection);
-		// Disabled to parallelize auto prover
-		// setRule(input.getSchedulingRule());
+		setRule(input.getSchedulingRule());
 	}
 
 	@Override

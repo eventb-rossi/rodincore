@@ -29,7 +29,7 @@ public class RecalculateAutoStatusHandler extends AbstractJobHandler {
 
 	@Override
 	protected WorkspaceJob getWorkspaceJob(IStructuredSelection sel) {
-		return new ProofStatusJob(Messages.dialogs_recalculatingAutoStatus,
+		return new ParallelProofStatusJob(Messages.dialogs_recalculatingAutoStatus,
 				false, sel) {
 
 			@Override
