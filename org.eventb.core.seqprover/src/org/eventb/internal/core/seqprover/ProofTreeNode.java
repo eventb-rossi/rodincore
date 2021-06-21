@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2006, 2014 ETH Zurich and others.
+ * Copyright (c) 2006, 2021 ETH Zurich and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -9,6 +9,7 @@
  *     ETH Zurich - initial API and implementation
  *     Systerel - extended interface with getFormulaFactory() method
  *     Systerel - used nested classes instead of anonymous ones
+ *     ISP RAS - made copy constructor public, added updateFields() method
  *******************************************************************************/
 package org.eventb.internal.core.seqprover;
 

@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2005, 2012 ETH Zurich and others.
+ * Copyright (c) 2005, 2021 ETH Zurich and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -10,6 +10,7 @@
  *     Systerel - separation of file and root element
  *     Systerel - used proof components
  *     Systerel - added simplify proof preference
+ *     ISP RAS - parallelize code
  *******************************************************************************/
 package org.eventb.internal.core.pom;
 

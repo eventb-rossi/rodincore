@@ -1,5 +1,5 @@
 /*******************************************************************************
- * Copyright (c) 2010, 2013 Systerel and others.
+ * Copyright (c) 2010, 2021 Systerel and others.
  * All rights reserved. This program and the accompanying materials
  * are made available under the terms of the Eclipse Public License v1.0
  * which accompanies this distribution, and is available at
@@ -7,6 +7,7 @@
  *
  * Contributors:
  *     Systerel - initial API and implementation
+ *     ISP RAS - added interactive tactics
  *******************************************************************************/
 package org.eventb.core.preferences.autotactics;
 
@@ -44,7 +45,8 @@ public interface IAutoPostTacticManager {
 	 * of the workspace profile.
 	 * 
 	 * @param root
-	 *            the root for which the auto-tactic profile is retrieved
+	 *            the root for which the interactive-tactic profile is
+	 *            retrieved
 	 * @return the composed tactic of selected interactive-tactics for the
 	 *            given root.
 	 */
