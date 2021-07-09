@@ -82,6 +82,11 @@ public final class AutoProver {
 
 	public static void run(IPSStatus[] pos, IProgressMonitor monitor)
 			throws RodinDBException {
+		if (pos.length == 0) {
+			monitor.done();
+			return;
+		}
+
 		final SubMonitor sMonitor = SubMonitor.convert(monitor,
 				"auto-proving", pos.length);
 		final IProofManager pm = EventBPlugin.getProofManager();

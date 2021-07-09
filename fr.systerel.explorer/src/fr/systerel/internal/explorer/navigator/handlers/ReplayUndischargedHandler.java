@@ -47,6 +47,10 @@ public class ReplayUndischargedHandler extends AbstractJobHandler {
 
 	static void rebuildProofs(Set<IPSStatus> statuses, IProgressMonitor monitor)
 			throws InterruptedException, CoreException {
+		if (statuses.size() == 0) {
+			return;
+		}
+
 		final SubMonitor subMonitor = SubMonitor.convert(monitor,
 				statuses.size());
 
