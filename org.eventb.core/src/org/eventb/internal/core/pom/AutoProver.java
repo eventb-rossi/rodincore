@@ -114,7 +114,7 @@ public final class AutoProver {
 
 			executor.shutdown();
 			while (!executor.isTerminated()) {
-				executor.awaitTermination(1, TimeUnit.SECONDS);
+				executor.awaitTermination(100, TimeUnit.MILLISECONDS);
 			}
 		} catch (InterruptedException e) {
 			e.printStackTrace();

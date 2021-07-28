@@ -105,7 +105,7 @@ public final class RecalculateAutoStatus {
 
 			executor.shutdown();
 			while (!executor.isTerminated()) {
-				executor.awaitTermination(1, TimeUnit.SECONDS);
+				executor.awaitTermination(100, TimeUnit.MILLISECONDS);
 			}
 			
 			if (sMonitor.isCanceled()) {
