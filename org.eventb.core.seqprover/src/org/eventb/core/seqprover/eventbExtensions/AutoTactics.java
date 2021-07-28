@@ -15,6 +15,7 @@
  *     Systerel - added DTDestrWDTac tactic (discharge)
  *     Systerel - added tactics to combine rm and ri
  *     Systerel - added tactic combinators
+ *     ISP RAS - added DisjEHypTac and ImpCaseHypTac tactics (split)
  *******************************************************************************/
 package org.eventb.core.seqprover.eventbExtensions;
 
@@ -1247,6 +1248,97 @@ public class AutoTactics {
 
 	}
 	
+	/**
+	 * Applies automatically the <code>disjE</code> tactic to the first
+	 * applicable position in the goal.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	public static class DisjEHypOnceTac implements ITactic {
+
+		@Override
+		public Object apply(IProofTreeNode ptNode, IProofMonitor pm) {
+			if (pm != null && pm.isCanceled()) {
+				return "Canceled";
+			}
+
+			for (Predicate shyp : ptNode.getSequent().selectedHypIterable()) {
+				if (pm != null && pm.isCanceled()) {
+					return "Canceled";
+				}
+
+				if (Tactics.disjE_applicable(shyp)) {
+					if (Tactics.disjE(shyp).apply(ptNode, pm) == null)
+						return null;
+				}
+			}
+			return "Selection contains no appropriate hypotheses";
+		}
+
+	}
+
+	/**
+	 * Applies automatically, repeatedly and recursively the
+	 * <code>DisjEHypOnceTac</code> to the proof subtree rooted at the given
+	 * node.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	public static class DisjEHypTac extends AbsractLazilyConstrTactic {
+
+		@Override
+		protected ITactic getSingInstance() {
+			return loopOnAllPending(new DisjEHypOnceTac());
+		}
+
+	}
+
+	/**
+	 * Applies automatically the <code>impCase</code> tactic to the first
+	 * applicable position in the goal.
+	 * 
+	 * @author Ilya Shchepetkov
+	 * @since 3.6
+	 */
+	public static class ImpCaseHypOnceTac implements ITactic {
+
+		@Override
+		public Object apply(IProofTreeNode ptNode, IProofMonitor pm) {
+			if (pm != null && pm.isCanceled()) {
+				return "Canceled";
+			}
+
+			for (Predicate shyp : ptNode.getSequent().selectedHypIterable()) {
+				if (pm != null && pm.isCanceled()) {
+					return "Canceled";
+				}
+
+				if (Tactics.impCase_applicable(shyp)) {
+					if (Tactics.impCase(shyp).apply(ptNode, pm) == null)
+						return null;
+				}
+			}
+			return "Selection contains no appropriate hypotheses";
+		}
+
+	}
+
+	/**
+	 * Applies automatically, repeatedly and recursively the
+	 * <code>ImpCaseHypOnceTac</code> to the proof subtree rooted at the given
+	 * node.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	public static class ImpCaseHypTac extends AbsractLazilyConstrTactic {
+
+		@Override
+		protected ITactic getSingInstance() {
+			return loopOnAllPending(new ImpCaseHypOnceTac());
+		}
+
+	}
+
 	/**
 	 * Applies automatically the <code>OnePointGoal</code> tactic to the goal.
 	 * 

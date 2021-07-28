@@ -888,6 +888,18 @@
             id="notEmptyTac"
             name="%notEmptyTacName">
       </autoTactic>
+      <autoTactic
+            class="org.eventb.core.seqprover.eventbExtensions.AutoTactics$DisjEHypTac"
+            description="%disjEHypTacDesc"
+            id="disjEHypTac"
+            name="%disjEHypTacName">
+      </autoTactic>
+      <autoTactic
+            class="org.eventb.core.seqprover.eventbExtensions.AutoTactics$ImpCaseHypTac"
+            description="%impCaseHypTacDesc"
+            id="impCaseHypTac"
+            name="%impCaseHypTacName">
+      </autoTactic>
    </extension>
    <extension
          point="org.eventb.core.seqprover.tacticCombinators">
