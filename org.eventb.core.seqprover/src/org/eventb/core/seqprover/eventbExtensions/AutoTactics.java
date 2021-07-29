@@ -16,6 +16,7 @@
  *     Systerel - added tactics to combine rm and ri
  *     Systerel - added tactic combinators
  *     ISP RAS - added DisjEHypTac and ImpCaseHypTac tactics (split)
+ *     ISP RAS - added more tactics
  *******************************************************************************/
 package org.eventb.core.seqprover.eventbExtensions;
 
@@ -1142,6 +1143,168 @@ public class AutoTactics {
 
 	}
 
+	/**
+	 * Applies automatically the <code>disjToImpl</code> tactic to the first
+	 * applicable position in the selected hypotheses.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	public static class DisjToImplHypOnceTac implements ITactic {
+		@Override
+
+		public Object apply(IProofTreeNode ptNode, IProofMonitor pm) {
+			if (pm != null && pm.isCanceled()) {
+				return "Canceled";
+			}
+			for (Predicate shyp : ptNode.getSequent().selectedHypIterable()) {
+				if (pm != null && pm.isCanceled()) {
+					return "Canceled";
+				}
+
+				final List<IPosition> pos = Tactics.disjToImplGetPositions(shyp);
+				if (pos.size() != 0) {
+					Tactics.disjToImpl(shyp, pos.get(0)).apply(ptNode, pm);
+				}
+			}
+			return "Selection contains no appropriate hypotheses";
+		}
+
+	}
+
+	/**
+	 * Applies automatically, repeatedly and recursively the
+	 * <code>DisjToImplHypOnceTac</code> to the proof subtree rooted at the given
+	 * node.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	public static class DisjToImplHypTac extends AbsractLazilyConstrTactic {
+
+		@Override
+		protected ITactic getSingInstance() {
+			return loopOnAllPending(new DisjToImplHypOnceTac());
+		}
+
+	}
+
+	/**
+	 * Applies automatically the <code>disjToImpl</code> tactic to the first
+	 * applicable position in the goal.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	public static class DisjToImplGoalOnceTac implements ITactic {
+
+		@Override
+		public Object apply(IProofTreeNode ptNode, IProofMonitor pm) {
+			if (pm != null && pm.isCanceled()) {
+				return "Canceled";
+			}
+			final Predicate goal = ptNode.getSequent().goal();
+			final List<IPosition> pos = Tactics.disjToImplGetPositions(goal);
+			if (pos.size() == 0) {
+				return "Tactic unapplicable";
+			}
+			if (pm != null && pm.isCanceled()) {
+				return "Canceled";
+			}
+			return Tactics.disjToImpl(null, pos.get(0)).apply(ptNode, pm);
+		}
+
+	}
+
+	/**
+	 * Applies automatically, repeatedly and recursively the
+	 * <code>DisjToImplGoalOnceTac</code> to the proof subtree rooted at the given
+	 * node.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	public static class DisjToImplGoalTac extends AbsractLazilyConstrTactic {
+
+		@Override
+		protected ITactic getSingInstance() {
+			return loopOnAllPending(new DisjToImplGoalOnceTac());
+		}
+
+	}
+
+	private abstract static class SetEqlRewritesTac extends AbstractPredOnceTac {
+
+		@Override
+		protected List<IPosition> getPositions(Predicate predicate) {
+			return Tactics.setEqlGetPositions(predicate);
+		}
+
+		@Override
+		protected ITactic getTactic(Predicate hyp, IPosition pos) {
+			return Tactics.setEqlRewrites(hyp, pos);
+		}
+
+}
+
+	/**
+	 * Applies automatically the <code>setEqlRewrites</code> tactic to the first
+	 * applicable position in the selected hypotheses.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	private static class SetEqlRewritesHypOnceTac extends SetEqlRewritesTac {
+
+		@Override
+		protected Iterable<Predicate> getPredicates(IProofTreeNode ptNode) {
+			return ptNode.getSequent().selectedHypIterable();
+		}
+
+	}
+
+	/**
+	 * Applies automatically the <code>setEqlRewrites</code> tactic to the first
+	 * applicable position in the goal.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	private static class SetEqlRewritesGoalOnceTac extends SetEqlRewritesTac {
+
+		@Override
+		protected Iterable<Predicate> getPredicates(IProofTreeNode ptNode) {
+			return Collections.singleton(ptNode.getSequent().goal());
+		}
+
+	}
+
+	/**
+	 * Applies automatically, repeatedly and recursively the
+	 * <code>SetEqlRewritesHypOnceTac</code> to the proof subtree rooted at the given
+	 * node.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	public static class SetEqlRewritesHypTac extends AbsractLazilyConstrTactic {
+
+		@Override
+		protected ITactic getSingInstance() {
+			return loopOnAllPending(new SetEqlRewritesHypOnceTac());
+		}
+
+	}
+
+	/**
+	 * Applies automatically, repeatedly and recursively the
+	 * <code>SetEqlRewritesGoalOnceTac</code> to the proof subtree rooted at the given
+	 * node.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	public static class SetEqlRewritesGoalTac extends AbsractLazilyConstrTactic {
+
+		@Override
+		protected ITactic getSingInstance() {
+			return loopOnAllPending(new SetEqlRewritesGoalOnceTac());
+		}
+
+	}
+
 	//*************************************************
 	//
 	//				Splitting Auto tactics
@@ -1250,7 +1413,7 @@ public class AutoTactics {
 	
 	/**
 	 * Applies automatically the <code>disjE</code> tactic to the first
-	 * applicable position in the goal.
+	 * applicable position in the selected hypotheses.
 	 * 
 	 * @author Ilya Shchepetkov
 	 */
@@ -1295,10 +1458,9 @@ public class AutoTactics {
 
 	/**
 	 * Applies automatically the <code>impCase</code> tactic to the first
-	 * applicable position in the goal.
+	 * applicable position in the selected hypotheses.
 	 * 
 	 * @author Ilya Shchepetkov
-	 * @since 3.6
 	 */
 	public static class ImpCaseHypOnceTac implements ITactic {
 
@@ -1335,6 +1497,94 @@ public class AutoTactics {
 		@Override
 		protected ITactic getSingInstance() {
 			return loopOnAllPending(new ImpCaseHypOnceTac());
+		}
+
+	}
+
+	/**
+	 * Applies automatically the <code>relOvr</code> tactic to the first
+	 * applicable position in the selected hypotheses.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	public static class RelOvrHypOnceTac implements ITactic {
+
+		@Override
+		public Object apply(IProofTreeNode ptNode, IProofMonitor pm) {
+			if (pm != null && pm.isCanceled()) {
+				return "Canceled";
+			}
+
+			for (Predicate shyp : ptNode.getSequent().selectedHypIterable()) {
+				if (pm != null && pm.isCanceled()) {
+					return "Canceled";
+				}
+
+				final List<IPosition> pos = Tactics.relOvrGetPositions(shyp);
+				if (pos.size() != 0) {
+					Tactics.relOvr(shyp, pos.get(0)).apply(ptNode, pm);
+				}
+			}
+
+			return "Selection contains no appropriate hypotheses";
+		}
+
+	}
+
+	/**
+	 * Applies automatically, repeatedly and recursively the
+	 * <code>relOvrHypOnceTac</code> to the proof subtree rooted at the given
+	 * node.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	public static class RelOvrHypTac extends AbsractLazilyConstrTactic {
+
+		@Override
+		protected ITactic getSingInstance() {
+			return loopOnAllPending(new RelOvrHypOnceTac());
+		}
+
+	}
+
+	/**
+	 * Applies automatically the <code>relOvr</code> tactic to the first
+	 * applicable position in the goal.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	public static class RelOvrGoalOnceTac implements ITactic {
+
+		@Override
+		public Object apply(IProofTreeNode ptNode, IProofMonitor pm) {
+			if (pm != null && pm.isCanceled()) {
+				return "Canceled";
+			}
+			final Predicate goal = ptNode.getSequent().goal();
+			final List<IPosition> pos = Tactics.relOvrGetPositions(goal);
+			if (pos.size() == 0) {
+				return "Tactic unapplicable";
+			}
+			if (pm != null && pm.isCanceled()) {
+				return "Canceled";
+			}
+			return Tactics.relOvr(null, pos.get(0)).apply(ptNode, pm);
+		}
+
+	}
+
+	/**
+	 * Applies automatically, repeatedly and recursively the
+	 * <code>RelOvrGoalOnceTac</code> to the proof subtree rooted at the given
+	 * node.
+	 * 
+	 * @author Ilya Shchepetkov
+	 */
+	public static class RelOvrGoalTac extends AbsractLazilyConstrTactic {
+
+		@Override
+		protected ITactic getSingInstance() {
+			return loopOnAllPending(new RelOvrGoalOnceTac());
 		}
 
 	}

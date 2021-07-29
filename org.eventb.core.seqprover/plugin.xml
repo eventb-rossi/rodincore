@@ -889,16 +889,68 @@
             name="%notEmptyTacName">
       </autoTactic>
       <autoTactic
+            auto="true"
             class="org.eventb.core.seqprover.eventbExtensions.AutoTactics$DisjEHypTac"
             description="%disjEHypTacDesc"
             id="disjEHypTac"
-            name="%disjEHypTacName">
+            name="%disjEHypTacName"
+            post="true">
       </autoTactic>
       <autoTactic
+            auto="true"
             class="org.eventb.core.seqprover.eventbExtensions.AutoTactics$ImpCaseHypTac"
             description="%impCaseHypTacDesc"
             id="impCaseHypTac"
-            name="%impCaseHypTacName">
+            name="%impCaseHypTacName"
+            post="true">
+      </autoTactic>
+      <autoTactic
+            auto="true"
+            class="org.eventb.core.seqprover.eventbExtensions.AutoTactics$RelOvrHypTac"
+            description="%relOvrHypTacDesc"
+            id="relOvrHypTac"
+            name="%relOvrHypTacName"
+            post="true">
+      </autoTactic>
+      <autoTactic
+            auto="true"
+            class="org.eventb.core.seqprover.eventbExtensions.AutoTactics$RelOvrGoalTac"
+            description="%relOvrGoalTacDesc"
+            id="relOvrGoalTac"
+            name="%relOvrGoalTacName"
+            post="true">
+      </autoTactic>
+      <autoTactic
+            auto="true"
+            class="org.eventb.core.seqprover.eventbExtensions.AutoTactics$DisjToImplHypTac"
+            description="%disjToImplHypTacDesc"
+            id="disjToImplHypTac"
+            name="%disjToImplHypTacName"
+            post="true">
+      </autoTactic>
+      <autoTactic
+            auto="true"
+            class="org.eventb.core.seqprover.eventbExtensions.AutoTactics$DisjToImplGoalTac"
+            description="%disjToImplGoalTacDesc"
+            id="disjToImplGoalTac"
+            name="%disjToImplGoalTacName"
+            post="true">
+      </autoTactic>
+      <autoTactic
+            auto="true"
+            class="org.eventb.core.seqprover.eventbExtensions.AutoTactics$SetEqlRewritesHypTac"
+            description="%setEqlRewritesHypTacDesc"
+            id="SetEqlRewritesHypAutoTac"
+            name="%setEqlRewritesHypTacName"
+            post="true">
+      </autoTactic>
+      <autoTactic
+            auto="true"
+            class="org.eventb.core.seqprover.eventbExtensions.AutoTactics$SetEqlRewritesGoalTac"
+            description="%setEqlRewritesGoalTacDesc"
+            id="SetEqlRewritesGoalAutoTac"
+            name="%setEqlRewritesGoalTacName"
+            post="true">
       </autoTactic>
    </extension>
    <extension
