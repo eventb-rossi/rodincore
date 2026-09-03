@@ -91,7 +91,18 @@ public class AutoPostTacticManager implements IAutoPostTacticManager {
 		return getSelectedComposedTactics(project, Tactics.POST);
 	}
 
-	private ITactic getSelectedComposedTactics(IProject project, Tactics tactic) {
+	/*
+	 * Synchronized because this walks a lot of shared mutable state: it flushes
+	 * and re-reads the preference store, calls profilesCache.inject() -- which
+	 * clears and replaces plain HashMaps -- and then does a set-then-get pair on
+	 * a process-wide IAutoTacticPreference singleton. Called concurrently, a
+	 * caller could observe the cache mid-injection and be handed a fail-tactic,
+	 * which silently leaves an obligation undischarged.
+	 *
+	 * Callers that run this per proof obligation should instead resolve the
+	 * tactic once and pass it down; this lock makes them correct, not fast.
+	 */
+	private synchronized ITactic getSelectedComposedTactics(IProject project, Tactics tactic) {
 		final IScopeContext sc = new ProjectScope(project);
 		PreferenceUtils.restoreFromUIIfNeeded(InstanceScope.INSTANCE.getNode(PLUGIN_ID), false);
 		PreferenceUtils.restoreFromUIIfNeeded(sc.getNode(PLUGIN_ID), false);

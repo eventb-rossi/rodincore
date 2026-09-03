@@ -31,10 +31,23 @@ public class RodinDBCache {
 	// average 25552 bytes per project.
 	private static final int DEFAULT_PROJECT_SIZE = 5;
 
-	// number of files in hard cache (absolute minimum = 3)
-	private static final int DEFAULT_OPENABLE_SIZE = 3;
+	// Number of files in hard cache (absolute minimum = 3).
+	//
+	// Related files are opened together -- three of them for one set of proof
+	// data -- so a cache of three could hold only one such set and evicted an
+	// entry on nearly every access, re-parsing the XML straight back in. These
+	// are clamped rather than scaled without limit: the entries hold parsed DOM
+	// trees, so the ceiling bounds retained heap on a machine with many cores.
+	private static final int PROCESSORS = Runtime.getRuntime()
+			.availableProcessors();
 
-	private static final int DEFAULT_BUFFER_SIZE = DEFAULT_OPENABLE_SIZE;
+	private static final int DEFAULT_OPENABLE_SIZE = Math.min(48,
+			Math.max(16, 3 * PROCESSORS));
+
+	// Kept lower than the openable cache: a buffer holds the whole parsed
+	// document, which is much heavier than the element info above it.
+	private static final int DEFAULT_BUFFER_SIZE = Math.min(24,
+			Math.max(8, 2 * PROCESSORS));
 	
 	/**
 	 * Active Rodin Model Info

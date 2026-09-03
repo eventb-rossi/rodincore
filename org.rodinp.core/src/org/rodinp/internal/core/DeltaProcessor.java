@@ -509,25 +509,22 @@ public class DeltaProcessor {
 	
 		// Important: if any listener reacts to notification by updating the listeners list or mask, these lists will
 		// be duplicated, so it is necessary to remember original lists in a variable (since field values may change under us)
-		IElementChangedListener[] listeners = this.state.elementChangedListeners;
-		int[] listenerMask = this.state.elementChangedListenerMasks;
-		int listenerCount = this.state.elementChangedListenerCount;
+		final DeltaProcessingState.Listeners listeners = this.state
+				.getElementChangedListeners();
 
 		switch (eventType) {
 			case DEFAULT_CHANGE_EVENT:
-				firePostChangeDelta(deltaToNotify, listeners, listenerMask, listenerCount);
+				firePostChangeDelta(deltaToNotify, listeners);
 				break;
 			case ElementChangedEvent.POST_CHANGE:
-				firePostChangeDelta(deltaToNotify, listeners, listenerMask, listenerCount);
+				firePostChangeDelta(deltaToNotify, listeners);
 				break;
 		}
 	}
 
 	private void firePostChangeDelta(
 		IRodinElementDelta deltaToNotify,
-		IElementChangedListener[] listeners,
-		int[] listenerMask,
-		int listenerCount) {
+		DeltaProcessingState.Listeners listeners) {
 			
 		// post change deltas
 		if (DEBUG){
@@ -538,7 +535,7 @@ public class DeltaProcessor {
 			// flush now so as to keep listener reactions to post their own deltas for subsequent iteration
 			this.flush();
 			
-			notifyListeners(deltaToNotify, ElementChangedEvent.POST_CHANGE, listeners, listenerMask, listenerCount);
+			notifyListeners(deltaToNotify, ElementChangedEvent.POST_CHANGE, listeners);
 		} 
 	}		
 	/*
@@ -624,11 +621,11 @@ public class DeltaProcessor {
 		if (insertedTree) return rootDelta;
 		return null;
 	}	
-	private void notifyListeners(IRodinElementDelta deltaToNotify, int eventType, IElementChangedListener[] listeners, int[] listenerMask, int listenerCount) {
+	private void notifyListeners(IRodinElementDelta deltaToNotify, int eventType, DeltaProcessingState.Listeners registered) {
 		final ElementChangedEvent extraEvent = new ElementChangedEvent(deltaToNotify, eventType);
-		for (int i= 0; i < listenerCount; i++) {
-			if ((listenerMask[i] & eventType) != 0){
-				final IElementChangedListener listener = listeners[i];
+		for (int i= 0; i < registered.listeners.length; i++) {
+			if ((registered.masks[i] & eventType) != 0){
+				final IElementChangedListener listener = registered.listeners[i];
 				long start = -1;
 				if (VERBOSE) {
 					System.out.print("Listener #" + (i+1) + "=" + listener.toString());//$NON-NLS-1$//$NON-NLS-2$

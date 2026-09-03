@@ -237,8 +237,12 @@ public class ReasonerDesc implements IReasonerDesc {
 				baseId, name, copyVersion, contextDependent);
 	}
 
+	// Synchronized because reasoner descriptors are shared across threads: the
+	// registry that hands them out is itself synchronized, but these two lazily
+	// initialised fields were not, so a concurrent first touch could both
+	// instantiate the reasoner twice and publish it unsafely.
 	@Override
-	public IReasoner getInstance() {
+	public synchronized IReasoner getInstance() {
 		if (instance != null) {
 			return instance;
 		}
@@ -289,7 +293,7 @@ public class ReasonerDesc implements IReasonerDesc {
 	}
 
 	@Override
-	public int getVersion() {
+	public synchronized int getVersion() {
 		if (version != UNKNOWN_VERSION) {
 			return version;
 		}
