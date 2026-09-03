@@ -940,7 +940,7 @@
             auto="true"
             class="org.eventb.core.seqprover.eventbExtensions.AutoTactics$SetEqlRewritesHypTac"
             description="%setEqlRewritesHypTacDesc"
-            id="SetEqlRewritesHypAutoTac"
+            id="setEqlRewritesHypTac"
             name="%setEqlRewritesHypTacName"
             post="true">
       </autoTactic>
@@ -948,7 +948,7 @@
             auto="true"
             class="org.eventb.core.seqprover.eventbExtensions.AutoTactics$SetEqlRewritesGoalTac"
             description="%setEqlRewritesGoalTacDesc"
-            id="SetEqlRewritesGoalAutoTac"
+            id="setEqlRewritesGoalTac"
             name="%setEqlRewritesGoalTacName"
             post="true">
       </autoTactic>
