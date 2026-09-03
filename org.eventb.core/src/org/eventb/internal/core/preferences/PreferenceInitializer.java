@@ -16,6 +16,8 @@ import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_AUTOTACTIC_CHOICE;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_AUTOTACTIC_ENABLE;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_CONSIDER_HIDDEN_HYPOTHESES;
+import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_INTERTACTIC_CHOICE;
+import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_INTERTACTIC_ENABLE;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_POSTTACTIC_CHOICE;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_POSTTACTIC_ENABLE;
 
@@ -48,6 +50,13 @@ public class PreferenceInitializer extends AbstractPreferenceInitializer {
 		// Default value for auto-tactic registry
 		defaultNode.putBoolean(P_AUTOTACTIC_ENABLE, DEFAULT_AUTO_ENABLE);
 		defaultNode.put(P_AUTOTACTIC_CHOICE, DEFAULT_AUTO_TACTIC);
+
+		// Default value for the interactive tactic, i.e. the one the prover's
+		// auto-prover button runs. It starts on the same profile as the
+		// automatic tactic, so behaviour is unchanged until a profile is
+		// chosen for it; without a default here it could not be reset at all.
+		defaultNode.putBoolean(P_INTERTACTIC_ENABLE, DEFAULT_AUTO_ENABLE);
+		defaultNode.put(P_INTERTACTIC_CHOICE, DEFAULT_AUTO_TACTIC);
 
 		// Default value consider hidden hypotheses
 		defaultNode.putBoolean(P_CONSIDER_HIDDEN_HYPOTHESES, false);

@@ -34,6 +34,7 @@ import org.eventb.core.seqprover.autoTacticPreference.IAutoTacticPreference;
 import org.eventb.core.seqprover.tactics.BasicTactics;
 import org.eventb.internal.core.Util;
 import org.eventb.internal.core.pm.PostTacticPreference;
+import org.eventb.internal.core.pom.InterTacticPreference;
 import org.eventb.internal.core.pom.POMTacticPreference;
 
 /**
@@ -49,8 +50,8 @@ public class AutoPostTacticManager implements IAutoPostTacticManager {
 			.getDefault();
 	private static final IAutoTacticPreference autoTacPref = POMTacticPreference
 			.getDefault();
-	private static final IAutoTacticPreference interTacPref = POMTacticPreference
-			.getDefault(); // TODO: Create preference for interactive-tactic
+	private static final IAutoTacticPreference interTacPref = InterTacticPreference
+			.getDefault();
 
 	private static IAutoPostTacticManager INSTANCE;
 
