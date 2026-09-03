@@ -14,17 +14,8 @@ package org.eventb.core.seqprover.tactics;
 
 import static org.eventb.core.seqprover.proofBuilder.ProofBuilder.rebuild;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.CompletionService;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorCompletionService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
-import java.util.concurrent.ThreadPoolExecutor;
 
 import org.eventb.core.seqprover.IProofMonitor;
 import org.eventb.core.seqprover.IProofRule;
@@ -36,7 +27,7 @@ import org.eventb.core.seqprover.IReasonerOutput;
 import org.eventb.core.seqprover.ITactic;
 import org.eventb.core.seqprover.proofBuilder.ProofBuilder;
 import org.eventb.internal.core.seqprover.Messages;
-import org.eventb.internal.core.seqprover.ProofTreeNode;
+import org.eventb.internal.core.seqprover.ParallelTactics;
 import org.eventb.internal.core.seqprover.Util;
 
 /**
@@ -471,8 +462,10 @@ public class BasicTactics {
 	 * Simultaneously run given tactics until one of them succeeds.
 	 * 
 	 * <p>
-	 * Applying the resulting tactic applies the given tactics simultaneously,
-	 * until one of them succeeds.
+	 * Each tactic works on its own copy of the node, and only the proof of the
+	 * first one to succeed is kept. Tactics run concurrently where there is
+	 * room to; a call made from inside this combinator runs them in turn
+	 * instead, and so does a call on a node that is not open.
 	 * </p>
 	 * <p>
 	 * The resulting tactic fails iff all tactics failed.
@@ -488,48 +481,10 @@ public class BasicTactics {
 
 			@Override
 			public Object apply(IProofTreeNode pt, IProofMonitor pm) {
-				final ThreadPoolExecutor executor = (ThreadPoolExecutor) Executors.newFixedThreadPool(tactics.length);
-				final CompletionService<ITactic> service = new ExecutorCompletionService<>(executor);
-				List<Future<ITactic>> futures = new ArrayList<>();
-
-				for (ITactic tactic : tactics) {
-					Callable<ITactic> task = () -> {
-						ProofTreeNode localPT = new ProofTreeNode((ProofTreeNode) pt);
-						Object tacticApp = tactic.apply(localPT, pm);
-
-						if (tacticApp == null) {
-							return tactic;
-						}
-
-						return null;
-					};
-
-					futures.add(service.submit(task));
-				}
-
-				executor.shutdown();
-				for (int i = 0; i < tactics.length; i++) {
-					try {
-						if (pm != null && pm.isCanceled()) {
-							return Messages.tactic_cancelled;
-						}
-
-						ITactic tactic = service.take().get();
-						if (tactic != null) {
-							tactic.apply(pt, pm);
-							return null;
-						}
-					} catch (InterruptedException | ExecutionException e) {
-						e.printStackTrace();
-					}
-				}
-
-				// There is no need to waste time waiting for all threads to be terminated
-				return "All tactics failed";
+				return ParallelTactics.firstSuccessful(pt, pm, tactics);
 			}
 		};
 	}
-
 
 	/**
 	 * Proof Reconstruction Tactics

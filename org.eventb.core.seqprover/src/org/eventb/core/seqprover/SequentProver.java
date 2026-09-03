@@ -17,6 +17,7 @@ import org.eclipse.core.runtime.MultiStatus;
 import org.eclipse.core.runtime.Platform;
 import org.eclipse.core.runtime.Plugin;
 import org.eventb.core.seqprover.xprover.AbstractXProverReasoner;
+import org.eventb.internal.core.seqprover.ParallelTactics;
 import org.eventb.internal.core.seqprover.AutoTacticChecker;
 import org.eventb.internal.core.seqprover.AutoTacticRegistry;
 import org.eventb.internal.core.seqprover.ProverChecks;
@@ -112,6 +113,7 @@ public class SequentProver extends Plugin {
 	 */
 	@Override
 	public void stop(BundleContext context) throws Exception {
+		ParallelTactics.shutdown();
 		super.stop(context);
 		plugin = null;
 	}

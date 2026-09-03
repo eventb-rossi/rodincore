@@ -9,7 +9,6 @@
  *     ETH Zurich - initial API and implementation
  *     Systerel - extended interface with getFormulaFactory() method
  *     Systerel - used nested classes instead of anonymous ones
- *     ISP RAS - made copy constructor public, added updateFields() method
  *******************************************************************************/
 package org.eventb.internal.core.seqprover;
 
@@ -161,12 +160,19 @@ public final class ProofTreeNode implements IProofTreeNode {
 	
 	
 	/**
-	 * Copy constructor
-	 * 
+	 * Copy constructor.
+	 * <p>
+	 * Private on purpose: the result still points at the original tree
+	 * (proofTree and parent are copied by reference), so it is only safe as the
+	 * first half of {@link #copySubTree()}, which disconnects it. Handing it
+	 * out lets a caller mutate what looks like a copy but still fires deltas
+	 * into the live tree.
+	 * </p>
+	 *
 	 * @param node
 	 * 				node to copy
 	 */
-	public ProofTreeNode(ProofTreeNode node) {
+	private ProofTreeNode(ProofTreeNode node) {
 		this.proofTree = node.proofTree;
 		this.parent = node.parent;
 		this.sequent = node.sequent;
