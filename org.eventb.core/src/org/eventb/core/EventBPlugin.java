@@ -39,6 +39,7 @@ import org.eventb.internal.core.pm.UserSupportUtils;
 import org.eventb.internal.core.pog.POGUtil;
 import org.eventb.internal.core.pog.modules.UtilityModule;
 import org.eventb.internal.core.pom.AutoPOM;
+import org.eventb.internal.core.pom.ProvingPool;
 import org.eventb.internal.core.pom.AutoProver;
 import org.eventb.internal.core.pom.POLoader;
 import org.eventb.internal.core.pom.RecalculateAutoStatus;
@@ -232,6 +233,7 @@ public class EventBPlugin extends Plugin {
 
 	@Override
 	public void stop(BundleContext context) throws Exception {
+		ProvingPool.shutdown();
 		super.stop(context);
 		PreferenceUtils.flush();
 		plugin = null;

@@ -66,13 +66,40 @@ public class ParallelTactics {
 	private static volatile ExecutorService pool;
 
 	/**
-	 * True on the threads of the shared pool. A tactic already running for this
-	 * combinator runs any nested combinator's tactics itself rather than
-	 * submitting more work: the tactics are typically external provers, and
-	 * profiles nest this combinator inside itself.
+	 * True while this thread is already proving in parallel -- either it is one
+	 * of this pool's own threads, or it was marked by
+	 * {@link #runAsProvingWorker(Runnable)}. Such a thread runs a nested
+	 * combinator's tactics itself rather than asking for more threads: the
+	 * tactics are typically external provers, profiles nest this combinator
+	 * inside itself, and obligations of different components are already being
+	 * proved concurrently one level up.
 	 */
 	private static final ThreadLocal<Boolean> onPoolThread = ThreadLocal
 			.withInitial(() -> Boolean.FALSE);
+
+	/**
+	 * Runs the given work marked as already proving in parallel, so that a
+	 * combinator reached from it runs its tactics in turn rather than asking
+	 * for more threads.
+	 * <p>
+	 * Racing tactics pays off when one obligation is being proved and someone
+	 * is waiting for the answer. It does not pay off when the machine is
+	 * already busy proving many obligations at once, and every extra thread may
+	 * hold an external prover process.
+	 * </p>
+	 *
+	 * @param work
+	 *            work to run on the current thread
+	 */
+	public static void runAsProvingWorker(Runnable work) {
+		final boolean outer = onPoolThread.get();
+		onPoolThread.set(Boolean.TRUE);
+		try {
+			work.run();
+		} finally {
+			onPoolThread.set(outer);
+		}
+	}
 
 	private static ExecutorService getPool() {
 		ExecutorService result = pool;
