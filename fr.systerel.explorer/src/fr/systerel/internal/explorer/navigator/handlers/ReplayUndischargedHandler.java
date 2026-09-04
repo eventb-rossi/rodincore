@@ -11,19 +11,14 @@
  *******************************************************************************/
 package fr.systerel.internal.explorer.navigator.handlers;
 
-import static org.eventb.core.EventBPlugin.rebuildProof;
+import static org.eventb.core.EventBPlugin.rebuildProofs;
 
 import java.util.Set;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import org.eclipse.core.resources.WorkspaceJob;
 import org.eclipse.core.runtime.CoreException;
-import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.SubMonitor;
 import org.eclipse.jface.viewers.IStructuredSelection;
-import org.eventb.core.IPRProof;
 import org.eventb.core.IPSStatus;
 
 import fr.systerel.internal.explorer.navigator.actionProviders.Messages;
@@ -35,54 +30,14 @@ public class ReplayUndischargedHandler extends AbstractJobHandler {
 
 	@Override
 	protected WorkspaceJob getWorkspaceJob(IStructuredSelection sel) {
-		return new ParallelProofStatusJob(Messages.dialogs_replayingProofs, true, sel) {
+		return new ProofStatusJob(Messages.dialogs_replayingProofs, true, sel) {
 
 			@Override
 			protected void perform(Set<IPSStatus> statuses,
-					SubMonitor subMonitor) throws InterruptedException, CoreException {
+					SubMonitor subMonitor) throws CoreException {
 				rebuildProofs(statuses, subMonitor);
 			}
 		};
-	}
-
-	static void rebuildProofs(Set<IPSStatus> statuses, IProgressMonitor monitor)
-			throws InterruptedException, CoreException {
-		if (statuses.size() == 0) {
-			return;
-		}
-
-		final SubMonitor subMonitor = SubMonitor.convert(monitor,
-				statuses.size());
-
-		int cores = Runtime.getRuntime().availableProcessors();
-		final ThreadPoolExecutor executor =
-				(ThreadPoolExecutor) Executors.newFixedThreadPool(Math.min(statuses.size(), cores));
-
-		try {
-			for (IPSStatus status : statuses) {
-				Runnable task = () -> {
-					try {
-						if (subMonitor != null && subMonitor.isCanceled()) {
-							return;
-						}
-						final IPRProof proof = status.getProof();
-						rebuildProof(proof, true, subMonitor.newChild(1));
-					} catch (Exception ex) {
-						Thread t = Thread.currentThread();
-						t.getUncaughtExceptionHandler().uncaughtException(t, ex);
-					}
-				};
-
-				executor.submit(task);
-			}
-
-			executor.shutdown();
-			while (!executor.isTerminated()) {
-				executor.awaitTermination(100, TimeUnit.MILLISECONDS);
-			}
-		} catch (InterruptedException e) {
-			e.printStackTrace();
-		}
 	}
 
 }

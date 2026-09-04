@@ -4,3 +4,4 @@ target/
 
 # Folder created by X virtual frame buffer for Jenkins tests
 /.xvfb*
+.tycho-consumer-pom.xml

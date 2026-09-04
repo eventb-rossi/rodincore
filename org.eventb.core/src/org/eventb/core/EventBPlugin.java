@@ -39,6 +39,7 @@ import org.eventb.internal.core.pm.UserSupportUtils;
 import org.eventb.internal.core.pog.POGUtil;
 import org.eventb.internal.core.pog.modules.UtilityModule;
 import org.eventb.internal.core.pom.AutoPOM;
+import org.eventb.internal.core.pom.ProofReplayer;
 import org.eventb.internal.core.pom.ProvingPool;
 import org.eventb.internal.core.pom.AutoProver;
 import org.eventb.internal.core.pom.POLoader;
@@ -617,6 +618,27 @@ public class EventBPlugin extends Plugin {
 			IProgressMonitor monitor) throws RodinDBException {
 		AutoProver.run(statuses.toArray(new IPSStatus[statuses.size()]),
 				monitor);
+	}
+
+	/**
+	 * Replays the stored proofs of the given proof obligations.
+	 * <p>
+	 * Obligations of one proof component are replayed in turn, under that
+	 * component's scheduling rule; different components proceed at the same
+	 * time.
+	 * </p>
+	 *
+	 * @param statuses
+	 *            the obligations whose proofs to replay
+	 * @param monitor
+	 *            a progress monitor, used only by the calling thread
+	 * @throws CoreException
+	 *             if replaying failed for any component
+	 * @since 3.9
+	 */
+	public static void rebuildProofs(Set<IPSStatus> statuses,
+			IProgressMonitor monitor) throws CoreException {
+		ProofReplayer.rebuildProofs(statuses, monitor);
 	}
 
 	/**

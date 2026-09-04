@@ -16,20 +16,21 @@ package org.eventb.internal.core.pom;
 
 import static org.eventb.internal.core.preferences.PreferenceUtils.getSimplifyProofPref;
 
-import java.util.Arrays;
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
+import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.SubMonitor;
+import static org.eventb.internal.core.pom.AutoPOM.tryMakeConsistent;
+
 import org.eventb.core.EventBPlugin;
 import org.eventb.core.IEventBRoot;
-import org.eventb.core.IPRRoot;
+import org.eventb.core.IPSRoot;
 import org.eventb.core.IPSStatus;
 import org.eventb.core.pm.IProofAttempt;
 import org.eventb.core.pm.IProofComponent;
@@ -38,8 +39,8 @@ import org.eventb.core.seqprover.IProofTree;
 import org.eventb.core.seqprover.ITactic;
 import org.eventb.internal.core.Messages;
 import org.eventb.internal.core.ProofMonitor;
-import org.rodinp.core.IInternalElement;
-import org.rodinp.core.IRodinFile;
+import org.eventb.internal.core.pom.ProvingPool.ComponentTask;
+import org.rodinp.core.RodinCore;
 import org.rodinp.core.RodinDBException;
 
 /**
@@ -69,83 +70,101 @@ public final class RecalculateAutoStatus {
 		// Nothing to do.
 	}
 
-	public static void run(IRodinFile prFile, IRodinFile psFile,
-			IPSStatus[] pos, IProgressMonitor monitor) throws RodinDBException {
-		final Set<IPSStatus> set = new HashSet<IPSStatus>(Arrays.asList(pos));
-		run(set, monitor);
-	}
-
 	public static void run(Set<IPSStatus> pos, IProgressMonitor monitor)
 			throws RodinDBException {
-		final SubMonitor sMonitor = SubMonitor.convert(monitor, pos.size());
-		final Set<IProofComponent> prComps = ConcurrentHashMap.<IProofComponent>newKeySet();
-		
-		int cores = Runtime.getRuntime().availableProcessors();
-		final ThreadPoolExecutor executor =
-				(ThreadPoolExecutor) Executors.newFixedThreadPool(Math.min(pos.size(), cores));
-
 		try {
-			for (IPSStatus status : pos) {
-				Runnable task = () -> {
-					try {
-						if (sMonitor.isCanceled()) {
-							return;
-						}
-						final IProofComponent pc = getProofComponent(status);
-						processPo(pc, status, sMonitor.newChild(1, SubMonitor.SUPPRESS_NONE));
-						prComps.add(pc);
-					} catch (Exception ex) {
-						Thread t = Thread.currentThread();
-						t.getUncaughtExceptionHandler().uncaughtException(t, ex);
-					}
-				};
-
-				executor.submit(task);
-			}
-
-			executor.shutdown();
-			while (!executor.isTerminated()) {
-				executor.awaitTermination(100, TimeUnit.MILLISECONDS);
-			}
-			
-			if (sMonitor.isCanceled()) {
-				makeAllConsistent(prComps);
-				throw new OperationCanceledException();
-			} else {
-				saveAll(prComps);
-			}
-		} catch (InterruptedException e) {
-			e.printStackTrace();
+			ProvingPool.runAll(componentTasks(pos), monitor);
+		} catch (RodinDBException e) {
+			throw e;
+		} catch (CoreException e) {
+			throw new RodinDBException(e);
 		} finally {
 			monitor.done();
 		}
 	}
 
-	private static void processPo(IProofComponent pc, IPSStatus status,
-			SubMonitor pm) throws RodinDBException {
-		
+	/*
+	 * One task per proof component.
+	 */
+	private static List<ComponentTask> componentTasks(Set<IPSStatus> pos) {
+		final Map<IProofComponent, List<IPSStatus>> byComponent = ProvingPool
+				.groupByComponent(pos);
+		final List<ComponentTask> tasks = new ArrayList<ComponentTask>(
+				byComponent.size());
+		for (final Map.Entry<IProofComponent, List<IPSStatus>> entry : byComponent
+				.entrySet()) {
+			final IProofComponent pc = entry.getKey();
+			final List<IPSStatus> statuses = entry.getValue();
+			// Resolved once per component, on the calling thread: the lookup
+			// re-reads and re-parses the tactic preference under a shared lock.
+			final ITactic tactic = autoTactic(pc.getPORoot());
+			tasks.add(m -> runComponent(pc, statuses, tactic, m));
+		}
+		return tasks;
+	}
+
+	/*
+	 * Recalculates one component's obligations, in order, under that
+	 * component's scheduling rule.
+	 *
+	 * The rule is taken here for the whole component rather than left to each
+	 * operation, because one of the writes below -- marking an obligation as
+	 * manually proved -- does not modify resources as far as the Rodin database
+	 * is concerned and so takes no rule of its own. Holding the component's
+	 * rule around the batch covers it, and gives the component a single save.
+	 */
+	private static void runComponent(IProofComponent pc,
+			List<IPSStatus> statuses, ITactic tactic, IProgressMonitor monitor)
+			throws RodinDBException {
+		final SubMonitor sMonitor = SubMonitor.convert(monitor,
+				statuses.size() + 1);
+		RodinCore.run(m -> {
+			boolean dirty = false;
+			try {
+				for (final IPSStatus status : statuses) {
+					dirty |= processPo(pc, status, tactic, sMonitor.split(1));
+				}
+				if (dirty) {
+					pc.save(sMonitor.split(1), false);
+				} else {
+					sMonitor.worked(1);
+				}
+			} catch (OperationCanceledException e) {
+				// Only this component is reverted: another component's work is
+				// none of this one's business. A failed revert is logged
+				// rather than thrown, so it cannot replace the cancellation.
+				tryMakeConsistent(pc);
+				throw e;
+			}
+		}, pc.getSchedulingRule(), null);
+	}
+
+	private static boolean processPo(IProofComponent pc, IPSStatus status,
+			ITactic tactic, SubMonitor pm) throws RodinDBException {
+
 		final String poName = status.getElementName();
 		if (pc.getProofAttempt(poName, REC_AUTO) != null) {
 			// another attempt for REC_AUTO exists: don't process this PO
-			return;
+			return false;
 		}
 
 		pm.beginTask(poName + ":", 10); //$NON-NLS-1$
 
 		pm.subTask(Messages.progress_RecalculateAutoStatus_loading);
 		final IProofAttempt pa = pc.createProofAttempt(poName, REC_AUTO, pm.newChild(1));
+		boolean committed = false;
 		try {
 			
 			final IProofTree autoProofTree = pa.getProofTree();
-			final IEventBRoot poRoot = pa.getComponent().getPORoot();
-			
+
 			pm.subTask(Messages.progress_RecalculateAutoStatus_proving);
-			autoTactic(poRoot).apply(autoProofTree.getRoot(), new ProofMonitor(pm.newChild(7)));
+			tactic.apply(autoProofTree.getRoot(), new ProofMonitor(pm.newChild(7)));
 
 			pm.subTask(Messages.progress_RecalculateAutoStatus_saving);
 			// Update the tree if it was discharged
 			if (autoProofTree.isClosed()) {
 				pa.commit(false, getSimplifyProofPref(), pm.newChild(2));
+				committed = true;
 				
 				if (DEBUG) {
 					if (status.getHasManualProof()) {
@@ -165,32 +184,12 @@ public final class RecalculateAutoStatus {
 			pa.dispose();
 			pm.done();
 		}
+		return committed;
 	}
 
 	private static ITactic autoTactic(IEventBRoot poRoot) {
 		return EventBPlugin.getAutoPostTacticManager().getSelectedAutoTactics(
 				poRoot);
-	}
-
-	private static void makeAllConsistent(Set<IProofComponent> prComps)
-			throws RodinDBException {
-		for (IProofComponent pc : prComps) {
-			pc.makeConsistent(null);
-		}
-	}
-
-	private static void saveAll(Set<IProofComponent> prComps)
-			throws RodinDBException {
-		for (IProofComponent pc : prComps) {
-			pc.save(null, false);
-		}
-	}
-	
-	private static IProofComponent getProofComponent(IInternalElement element) {
-		final IProofManager pm = EventBPlugin.getProofManager();
-		final IEventBRoot root = (IEventBRoot) element.getRoot();
-		final IPRRoot prRoot = root.getPRRoot();
-		return pm.getProofComponent(prRoot);
 	}
 
 }

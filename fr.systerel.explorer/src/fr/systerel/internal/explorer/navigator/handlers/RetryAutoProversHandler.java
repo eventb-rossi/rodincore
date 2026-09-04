@@ -30,7 +30,7 @@ public class RetryAutoProversHandler extends AbstractJobHandler {
 
 	@Override
 	protected WorkspaceJob getWorkspaceJob(IStructuredSelection sel) {
-		return new ParallelProofStatusJob(Messages.dialogs_applyingAutoProvers, true, sel) {
+		return new ProofStatusJob(Messages.dialogs_applyingAutoProvers, true, sel) {
 
 			@Override
 			protected void perform(Set<IPSStatus> statuses,
