@@ -16,7 +16,6 @@ import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_INTERTACTIC_CHOICE;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_POSTTACTIC_CHOICE;
 import static org.eventb.core.preferences.autotactics.TacticPreferenceConstants.P_TACTICSPROFILES;
-import static org.eventb.core.preferences.autotactics.TacticPreferenceFactory.makeTacticPreferenceMap;
 
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ProjectScope;
@@ -61,7 +60,10 @@ public class AutoPostTacticManager implements IAutoPostTacticManager {
 	private final CachedPreferenceMap<ITacticDescriptor> profilesCache;
 
 	private AutoPostTacticManager() {
-		profilesCache = makeTacticPreferenceMap();
+		// Contributed profiles must also work before the preferences UI has
+		// serialized them. Injecting the effective map adds contributions without
+		// writing preferences or replacing user profiles with the same name.
+		profilesCache = new TacticsProfilesCache(InstanceScope.INSTANCE.getNode(PLUGIN_ID));
 		preferencesService = Platform.getPreferencesService();
 		autoTacPref.setSelectedDescriptor(autoTacPref.getDefaultDescriptor());
 		interTacPref.setSelectedDescriptor(interTacPref.getDefaultDescriptor());
