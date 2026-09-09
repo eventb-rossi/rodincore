@@ -13,12 +13,27 @@ package fr.systerel.internal.explorer.navigator;
 import org.eclipse.core.resources.IWorkspaceRoot;
 import org.eclipse.swt.SWT;
 import org.eclipse.swt.widgets.Composite;
+import org.eclipse.ui.IMemento;
+import org.eclipse.ui.IViewSite;
+import org.eclipse.ui.PartInitException;
 import org.eclipse.ui.navigator.CommonNavigator;
 import org.eclipse.ui.navigator.CommonViewer;
 
 import fr.systerel.internal.explorer.model.ModelController;
 
 public class EventBNavigator extends CommonNavigator {
+
+	@Override
+	public void init(IViewSite site, IMemento memento) throws PartInitException {
+		super.init(site, memento);
+		if (memento == null) {
+			// No saved state at all, so this workspace has never seen the
+			// view: start with the editor linked, which is what users expect
+			// from clicking an element.  A saved state, including a
+			// deliberate "off", is left alone by super.init().
+			setLinkingEnabled(true);
+		}
+	}
 
 	@Override
 	protected CommonViewer createCommonViewerObject(Composite aParent) {

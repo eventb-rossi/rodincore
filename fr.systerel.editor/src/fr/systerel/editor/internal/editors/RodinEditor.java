@@ -136,8 +136,8 @@ public class RodinEditor extends TextEditor {
 		overlayEditor = new OverlayEditor(styledText, mapper, viewer, this);
 		editorActionTarget = new EditorActionTarget(this);
 		
-		selController = new SelectionController(styledText, mapper, viewer,
-				overlayEditor);
+		selController = new SelectionController(this, styledText, mapper,
+				viewer, overlayEditor);
 		getSite().setSelectionProvider(selController);
 		selController.addSelectionChangedListener(new ISelectionChangedListener() {
 			

@@ -75,6 +75,7 @@ public class SelectionController implements MouseListener, VerifyListener,
 	public static boolean DEBUG;
 	
 
+	private final RodinEditor editor;
 	private StyledText styledText;
 	private DocumentMapper mapper;
 	private ProjectionViewer viewer;
@@ -89,9 +90,11 @@ public class SelectionController implements MouseListener, VerifyListener,
 	 */
 	private int clickedOffset;
 
-	public SelectionController(StyledText styledText, DocumentMapper mapper,
-			ProjectionViewer viewer, OverlayEditor overlayEditor) {
+	public SelectionController(RodinEditor editor, StyledText styledText,
+			DocumentMapper mapper, ProjectionViewer viewer,
+			OverlayEditor overlayEditor) {
 		super();
+		this.editor = editor;
 		this.styledText = styledText;
 		this.viewer = viewer;
 		this.mapper = mapper;
@@ -324,14 +327,22 @@ public class SelectionController implements MouseListener, VerifyListener,
 	}
 	
 	/**
-	 * Selects the given elements in the text and scrolls to reveal the position
-	 * of the first one. The selection is done in a best effort manner (i.e., if
-	 * the elements are valid and explicit).
+	 * Selects the given elements in the text. The selection is done in a best
+	 * effort manner (i.e., if the elements are valid and explicit), elements
+	 * that cannot be selected are skipped.
+	 * <p>
+	 * The viewport is left untouched: callers that want the selection to be
+	 * shown pass the returned position to {@link RodinEditor#reveal(EditPos)}.
+	 * Scrolling here would fight the callers that restore a viewport of their
+	 * own, such as the editor resynchronizer.
+	 * </p>
 	 * 
 	 * @param selected
 	 *            array of elements to select
+	 * @return the position of the first selected element, or <code>null</code>
+	 *         if no element could be selected
 	 */
-	public void selectItems(ILElement[] selected) {
+	public EditPos selectItems(ILElement[] selected) {
 		selection.clear();
 		EditPos first = null;
 		for (ILElement e : selected) {
@@ -340,10 +351,10 @@ public class SelectionController implements MouseListener, VerifyListener,
 				continue;
 			final ILElement element = editorElem.getLightElement();
 			if (element.isImplicit())
-				return;
+				continue;
 			final EditPos enclosingPos = mapper.getItemPosition(editorElem);
 			if (enclosingPos == null)
-				return;
+				continue;
 			selection.add(element, enclosingPos);
 			if (first == null) {
 				first = enclosingPos;
@@ -352,13 +363,8 @@ public class SelectionController implements MouseListener, VerifyListener,
 				System.out.println("selected " + element.getElement() + " in "
 						+ enclosingPos);
 		}
-		if (first != null) {
-			final int start = first.getStart();
-			if (!(viewer.overlapsWithVisibleRegion(start, first.getLength()))) {
-				styledText.setTopIndex(styledText.getLineAtOffset(start));
-			}
-		}
 		firePostSelectionChanged(new SelectionChangedEvent(this, getSelection()));
+		return first;
 	}
 	
 	/** Removes all selections */
@@ -494,8 +500,14 @@ public class SelectionController implements MouseListener, VerifyListener,
 					elements.add(converted);
 				}
 			}
-			selectItems(elements.toArray(new ILElement[elements.size()]));
-			firePostSelectionChanged(new SelectionChangedEvent(viewer,
+			final EditPos first = selectItems(elements
+					.toArray(new ILElement[elements.size()]));
+			if (first != null) {
+				// Scroll to the element and put the caret on it, so that a
+				// click in the Event-B Explorer lands where it says it does.
+				editor.reveal(first);
+			}
+			firePostSelectionChanged(new SelectionChangedEvent(this,
 					new StructuredSelection(elements)));
 		}
 	}

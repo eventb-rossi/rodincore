@@ -21,15 +21,6 @@
    </extension>
    <extension
          point="org.eclipse.ui.navigator.viewer">
-      <viewer
-            viewerId="fr.systerel.explorer.navigator.view">
-         <options>
-            <property
-                  name="org.eclipse.ui.navigator.hideLinkWithEditorAction"
-                  value="true">
-            </property>
-         </options>
-      </viewer>
       <viewerContentBinding
             viewerId="fr.systerel.explorer.navigator.view">
          <includes>
@@ -81,6 +72,9 @@
             <contentExtension
                   pattern="org.eclipse.ui.navigator.resources.workingSets">
             </contentExtension>
+            <contentExtension
+                  pattern="fr.systerel.explorer.navigator.linkHelper">
+            </contentExtension>
          </includes>
       </viewerContentBinding>
       <viewerActionBinding
@@ -118,6 +112,43 @@
             </actionExtension>
          </includes>
       </viewerActionBinding>
+   </extension>
+   <extension
+         point="org.eclipse.ui.navigator.linkHelper">
+      <linkHelper
+            class="fr.systerel.internal.explorer.navigator.EventBLinkHelper"
+            id="fr.systerel.explorer.navigator.linkHelper">
+         <editorInputEnablement>
+            <and>
+               <instanceof
+                     value="org.eclipse.ui.IFileEditorInput">
+               </instanceof>
+               <adapt
+                     type="org.eclipse.core.resources.IFile">
+                  <or>
+                     <test
+                           property="org.eclipse.core.resources.name"
+                           value="*.bum">
+                     </test>
+                     <test
+                           property="org.eclipse.core.resources.name"
+                           value="*.buc">
+                     </test>
+                  </or>
+               </adapt>
+            </and>
+         </editorInputEnablement>
+         <selectionEnablement>
+            <or>
+               <instanceof
+                     value="org.rodinp.core.IRodinElement">
+               </instanceof>
+               <instanceof
+                     value="fr.systerel.explorer.IElementNode">
+               </instanceof>
+            </or>
+         </selectionEnablement>
+      </linkHelper>
    </extension>
    <extension
          point="org.eclipse.ui.navigator.navigatorContent">
