@@ -16,6 +16,7 @@ package org.eventb.internal.core.sc.modules;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -69,8 +70,6 @@ public class MachineEventWitnessModule extends PredicateModule<IWitness> {
 	private FormulaFactory factory;
 	private IConcreteEventInfo concreteEventInfo;
 
-	private static int WITNESS_HASH_TABLE_SIZE = 31;
-
 	@Override
 	public void process(IRodinElement element, IInternalElement target,
 			ISCStateRepository repository, IProgressMonitor monitor)
@@ -89,9 +88,7 @@ public class MachineEventWitnessModule extends PredicateModule<IWitness> {
 		if (formulaElements.length > 0)
 			checkAndType(element.getElementName(), repository, monitor);
 
-		// the hash set provides a fast way to treat duplicates
-		HashSet<String> witnessNames = new HashSet<String>(
-				WITNESS_HASH_TABLE_SIZE);
+		Set<String> witnessNames = new TreeSet<String>();
 
 		getWitnessNames(witnessNames, repository);
 

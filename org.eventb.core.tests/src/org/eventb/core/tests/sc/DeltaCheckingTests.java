@@ -12,8 +12,13 @@
  *******************************************************************************/
 package org.eventb.core.tests.sc;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import org.eventb.core.IContextRoot;
 import org.eventb.core.IMachineRoot;
+import org.eventb.core.IPOIdentifier;
+import org.eventb.core.IPOPredicateSet;
 import org.eventb.core.IPORoot;
 import org.eventb.core.ISCContextRoot;
 import org.eventb.core.ISCMachineRoot;
@@ -25,6 +30,46 @@ import org.junit.Test;
  * @author Laurent Voisin
  */
 public class DeltaCheckingTests extends BasicSCTestWithFwdConfig {
+
+	@Test
+	public void testGeneratedIdentifierOrder() throws Exception {
+		final IContextRoot ctx = createContext("ctx");
+		addCarrierSets(ctx, "Z", "A");
+		saveRodinFileOf(ctx);
+
+		final IMachineRoot mac = createMachine("mch");
+		addVariables(mac, "z", "a");
+		addInvariants(mac, makeSList("typ"), makeSList("z∈ℕ ∧ a∈ℕ"), false);
+		saveRodinFileOf(mac);
+
+		runBuilder();
+
+		final ISCContextRoot scCtx = ctx.getSCContextRoot();
+		final ISCMachineRoot scMac = mac.getSCMachineRoot();
+		assertEquals("A", scCtx.getSCCarrierSets()[0].getElementName());
+		assertEquals("Z", scCtx.getSCCarrierSets()[1].getElementName());
+		assertEquals("a", scMac.getSCVariables()[0].getElementName());
+		assertEquals("z", scMac.getSCVariables()[1].getElementName());
+
+		IPOPredicateSet identifierSet = null;
+		for (IPOPredicateSet set : mac.getPORoot().getPredicateSets()) {
+			if (set.getIdentifiers().length == 2) {
+				identifierSet = set;
+				break;
+			}
+		}
+		assertNotNull("PO identifier set", identifierSet);
+		final IPOIdentifier[] identifiers = identifierSet.getIdentifiers();
+		assertEquals("a", identifiers[0].getElementName());
+		assertEquals("z", identifiers[1].getElementName());
+
+		// Reordering source declarations must not change the generated files.
+		ctx.getCarrierSets()[1].move(ctx, ctx.getCarrierSets()[0], null, false, null);
+		mac.getVariables()[1].move(mac, mac.getVariables()[0], null, false, null);
+		saveRodinFileOf(ctx);
+		saveRodinFileOf(mac);
+		runBuilderNotChanged(scCtx, ctx.getPORoot(), scMac, mac.getPORoot());
+	}
 
 	/**
 	 * Ensures that the statically-checked file of a context is modified only

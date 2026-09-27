@@ -12,7 +12,7 @@
  *******************************************************************************/
 package org.eventb.internal.core.basis;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.eclipse.core.runtime.IProgressMonitor;
@@ -43,11 +43,11 @@ import org.rodinp.core.RodinDBException;
 public class ProofStoreCollector implements IProofStoreCollector {
 
 	private final ISealedTypeEnvironment baseTypEnv;
-	private final Map<Predicate,String> predicates = new HashMap<Predicate,String>();
+	private final Map<Predicate,String> predicates = new LinkedHashMap<Predicate,String>();
 	private int predCount = 0;
-	private final Map<Expression,String> expressions = new HashMap<Expression,String>();
+	private final Map<Expression,String> expressions = new LinkedHashMap<Expression,String>();
 	private int exprCount = 0;
-	private final Map<IReasonerDesc, String> reasoners = new HashMap<IReasonerDesc, String>();
+	private final Map<IReasonerDesc, String> reasoners = new LinkedHashMap<IReasonerDesc, String>();
 	private int reasonerCount = 0;
 	
 	public ProofStoreCollector(ISealedTypeEnvironment baseTypEnv) {

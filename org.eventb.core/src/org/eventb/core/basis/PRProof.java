@@ -16,6 +16,7 @@ package org.eventb.core.basis;
 import static org.eventb.core.EventBAttributes.PR_SETS_ATTRIBUTE;
 import static org.eventb.core.EventBPlugin.getProofManager;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -182,7 +183,9 @@ public class PRProof extends EventBProofElement implements IPRProof {
 	public void setIntroFreeIdents(Collection<String> identNames, IProgressMonitor monitor) throws RodinDBException {
 		StringBuilder names = new StringBuilder();
 		String sep = "";
-		for (String name : identNames) {
+		final ArrayList<String> ordered = new ArrayList<String>(identNames);
+		ordered.sort(String::compareTo);
+		for (String name : ordered) {
 			names.append(sep);
 			sep = ",";
 			names.append(name);

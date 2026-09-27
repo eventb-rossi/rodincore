@@ -13,6 +13,7 @@
  *******************************************************************************/
 package org.eventb.core.tests.pom;
 
+import static org.eventb.core.EventBAttributes.FRESH_IDENTIFIERS_ATTRIBUTE;
 import static org.eventb.core.EventBAttributes.HYPS_ATTRIBUTE;
 import static org.eventb.core.seqprover.ProverFactory.makeProofTree;
 import static org.eventb.core.seqprover.eventbExtensions.Tactics.impI;
@@ -30,17 +31,25 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.rodinp.core.IRodinDBStatusConstants.ATTRIBUTE_DOES_NOT_EXIST;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Set;
 
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IProgressMonitor;
 import org.eventb.core.IPRProof;
 import org.eventb.core.IPRProofRule;
 import org.eventb.core.IPRRoot;
+import org.eventb.core.IProofStoreCollector;
+import org.eventb.core.ast.Expression;
 import org.eventb.core.ast.Formula;
 import org.eventb.core.ast.FormulaFactory;
 import org.eventb.core.ast.IPosition;
 import org.eventb.core.ast.Predicate;
+import org.eventb.core.basis.PRProof;
 import org.eventb.core.seqprover.IConfidence;
 import org.eventb.core.seqprover.IProofRule;
 import org.eventb.core.seqprover.IProofSkeleton;
@@ -73,6 +82,31 @@ import org.rodinp.core.RodinDBException;
  *
  */
 public class ProofSerializationTests extends BuilderTest {
+
+	private static class RecordingStore implements IProofStoreCollector {
+		final List<Predicate> predicates = new ArrayList<Predicate>();
+
+		@Override
+		public String putPredicate(Predicate pred) {
+			predicates.add(pred);
+			return "p" + (predicates.size() - 1);
+		}
+
+		@Override
+		public String putExpression(Expression expr) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public String putReasoner(IReasonerDesc reasoner) {
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public void writeOut(IPRProof proof, IProgressMonitor monitor) {
+			throw new UnsupportedOperationException();
+		}
+	}
 
 	@Before
 	public void setup() {
@@ -200,6 +234,26 @@ public class ProofSerializationTests extends BuilderTest {
 		checkProofTreeSerialization(proof1, proofTree, false);
 		(new AutoTactics.FalseHypTac()).apply(proofTree.getRoot(), null);
 		checkProofTreeSerialization(proof1, proofTree, true);
+	}
+
+	@Test
+	public void testUnorderedProofDataHasStableSerialization() throws Exception {
+		final PRProof first = (PRProof) prRoot.createChild(IPRProof.ELEMENT_TYPE, null, null);
+		final PRProof second = (PRProof) prRoot.createChild(IPRProof.ELEMENT_TYPE, null, null);
+		final Predicate one = genPred(factory, "1=1");
+		final Predicate two = genPred(factory, "2=2");
+		final RecordingStore firstStore = new RecordingStore();
+		final RecordingStore secondStore = new RecordingStore();
+		first.setHyps(new LinkedHashSet<Predicate>(Arrays.asList(two, one)), firstStore, null);
+		second.setHyps(new LinkedHashSet<Predicate>(Arrays.asList(one, two)), secondStore, null);
+		first.setIntroFreeIdents(Arrays.asList("z", "a"), null);
+		second.setIntroFreeIdents(Arrays.asList("a", "z"), null);
+
+		assertEquals(first.getAttributeValue(HYPS_ATTRIBUTE), second.getAttributeValue(HYPS_ATTRIBUTE));
+		assertEquals(Arrays.asList(one, two), firstStore.predicates);
+		assertEquals(firstStore.predicates, secondStore.predicates);
+		assertEquals(first.getAttributeValue(FRESH_IDENTIFIERS_ATTRIBUTE),
+				second.getAttributeValue(FRESH_IDENTIFIERS_ATTRIBUTE));
 	}
 
 	/**

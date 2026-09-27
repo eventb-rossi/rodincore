@@ -24,6 +24,7 @@ import org.eclipse.core.runtime.SubMonitor;
 import org.eventb.core.IConfigurationElement;
 import org.eventb.core.IEventBRoot;
 import org.eventb.core.sc.state.ISCStateRepository;
+import org.eventb.internal.core.GeneratedFileOrder;
 import org.eventb.internal.core.sc.Messages;
 import org.eventb.internal.core.sc.SCStateRepository;
 import org.eventb.internal.core.sc.SCUtil;
@@ -141,6 +142,7 @@ public abstract class StaticChecker implements IAutomaticTool, IExtractor {
 		final SubMonitor sMonitor = SubMonitor.convert(monitor, 2);
 		IEventBRoot scRoot = (IEventBRoot) scFile.getRoot();
 		IEventBRoot scTmpRoot = (IEventBRoot) scTmpFile.getRoot();
+		GeneratedFileOrder.canonicalize(scTmpRoot);
 		if (scTmpRoot.hasSameAttributes(scRoot)
 				&& scTmpRoot.hasSameChildren(scRoot)) {
 			scTmpFile.delete(true, sMonitor.split(2));

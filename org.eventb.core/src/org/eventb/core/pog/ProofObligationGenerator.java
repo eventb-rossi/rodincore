@@ -33,6 +33,7 @@ import org.eventb.core.IPOSequent;
 import org.eventb.core.IPOStampedElement;
 import org.eventb.core.pog.state.IPOGStateRepository;
 import org.eventb.core.sc.GraphProblem;
+import org.eventb.internal.core.GeneratedFileOrder;
 import org.eventb.internal.core.Util;
 import org.eventb.internal.core.pog.Messages;
 import org.eventb.internal.core.pog.POGStateRepository;
@@ -94,6 +95,7 @@ public abstract class ProofObligationGenerator implements IAutomaticTool, IExtra
 
 		final IPORoot oldRoot = (IPORoot) oldFile.getRoot();
 		final IPORoot newRoot = (IPORoot) newFile.getRoot();
+		GeneratedFileOrder.canonicalize(newRoot);
 		final long freshStamp;
 		final boolean oldExists = oldFile.exists();
 		if (oldExists) {

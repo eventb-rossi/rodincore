@@ -24,7 +24,9 @@ import static org.eventb.core.EventBAttributes.INF_HYPS_ATTRIBUTE;
 import static org.eventb.core.EventBAttributes.MANUAL_PROOF_ATTRIBUTE;
 import static org.eventb.core.EventBAttributes.UNSEL_HYPS_ATTRIBUTE;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -211,7 +213,9 @@ public abstract class EventBProofElement extends InternalElement implements
 			IProofStoreCollector store) throws RodinDBException {
 		StringBuilder refs = new StringBuilder();
 		String sep = "";
-		for (Predicate pred : hyps) {
+		final ArrayList<Predicate> ordered = new ArrayList<Predicate>(hyps);
+		ordered.sort(Comparator.comparing(Predicate::toStringWithTypes));
+		for (Predicate pred : ordered) {
 			refs.append(sep);
 			sep = ",";
 			refs.append(store.putPredicate(pred));
